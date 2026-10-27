@@ -1,0 +1,23 @@
+{
+  "appId": "com.benchloop.calculators",
+  "appName": "Bench & Loop",
+  "webDir": "www",
+  "backgroundColor": "#0c6a5e",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "launchShowDuration": 0,
+      "backgroundColor": "#0c6a5e",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "overlaysWebView": true
+    },
+    "SystemBars": {
+      "insetsHandling": "css"
+    }
+  },
+  "ios": {
+    "contentInset": "never"
+  }
+}

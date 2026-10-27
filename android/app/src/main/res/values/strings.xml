@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bench &amp; Loop</string>
+    <string name="title_activity_main">Bench &amp; Loop</string>
+    <string name="package_name">com.benchloop.calculators</string>
+    <string name="custom_url_scheme">com.benchloop.calculators</string>
+</resources>

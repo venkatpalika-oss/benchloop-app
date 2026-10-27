@@ -1,0 +1,80 @@
+# Codemagic cloud builds for Bench & Loop (no Mac or Android Studio needed)
+# Before the first run, finish the setup steps in LAUNCH_GUIDE.md (signing keys + store connections).
+
+workflows:
+
+  android-release:
+    name: Android release (Google Play)
+    instance_type: linux_x2
+    max_build_duration: 45
+    environment:
+      node: 22
+      java: 21
+      android_signing:
+        - benchloop_keystore            # name you give the keystore in Codemagic > Team settings > Code signing identities
+      # Uncomment after LAUNCH_GUIDE step 4e (automatic uploads to Google Play):
+      # groups:
+      #   - google_play                 # holds GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+      - name: Copy web app into Android project
+        script: npx cap sync android
+      - name: Build signed app bundle (.aab) and test APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease assembleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab   # upload this to Google Play
+      - android/app/build/outputs/apk/release/*.apk      # install this directly on your own phone to test
+    publishing:
+      email:
+        recipients:
+          - you@example.com             # change to your email
+      # Uncomment after LAUNCH_GUIDE step 4e:
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal               # promote to closed/production in Play Console
+      #   submit_as_draft: true
+
+  ios-release:
+    name: iOS release (App Store / TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: BenchLoop ASC key   # name of the App Store Connect API key you add in Codemagic
+    environment:
+      node: 22
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.benchloop.calculators
+      vars:
+        APP_STORE_APPLE_ID: 0000000000         # replace with the Apple ID number of your app in App Store Connect
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+      - name: Copy web app into iOS project
+        script: npx cap sync ios
+      - name: Apply signing profiles
+        script: xcode-project use-profiles
+      - name: Set build number
+        script: |
+          cd ios/App
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          agvtool new-version -all $((LATEST + 1))
+      - name: Build signed .ipa
+        script: |
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - you@example.com             # change to your email
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
